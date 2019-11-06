@@ -6,11 +6,11 @@
     - davidban77.gns3
 
   tasks:
-    #- name: get latest rolling
-    #  uri:
-    #    url: "{{ latest_rolling_url }}"
-    #    method: GET
-    #    dest: "{{ iso_path }}"
+    - name: get latest rolling
+      uri:
+        url: "{{ latest_rolling_url }}"
+        method: GET
+        dest: "{{ iso_path }}"
 
     - name: POST from contents of local file
       uri:
