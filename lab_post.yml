@@ -1,0 +1,40 @@
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - inventory/gns3_vars.yml
+  collections:
+    - davidban77.gns3
+
+
+
+  tasks:
+    - name: get latest rolling
+      uri:
+        url: "{{ latest_rolling_url }}"
+        method: GET
+        dest: "{{ iso_path }}"
+
+    - name: POST from contents of local file
+      uri:
+        url: "{{ gns3_url }}:3080/v2/compute/qemu/images/{{ iso_filename }}"
+        method: POST
+        src: "{{ iso_path }}"
+        status_code: 204
+
+    - name: POST from contents of local file
+      uri:
+        url: "{{ gns3_url }}:3080/v2/templates"
+        method: POST
+        body_format: json
+        body: {
+            "compute_id": "local",
+            "name": "{{ template_name }}",
+            "template_type": "qemu",
+            "ram": 512,
+            "adapters": 4,
+            "port_name_format": "eth{0}",
+            "cdrom_image": "{{ iso_filename }}",
+            "boot_priority": "d",
+            "qemu_path": "/usr/bin/qemu-system-x86_64",
+          }
+        status_code: 201

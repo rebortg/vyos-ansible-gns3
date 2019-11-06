@@ -1,0 +1,8 @@
+[network]
+vyos-01  ansible_host=192.168.188.101 mgmt_ip=192.168.188.101/24  mgmt_interface=eth0  ansible_network_os="vyos" eth1=10.1.1.1/24 icmp=10.1.1.2
+vyos-02  ansible_host=192.168.188.102 mgmt_ip=192.168.188.102/24  mgmt_interface=eth0  ansible_network_os="vyos" eth1=10.1.1.2/24 icmp=10.1.1.1
+
+
+[network:vars]
+ansible_user=vyos
+ansible_password=vyos

@@ -1,0 +1,28 @@
+- name: Lab creation
+  import_playbook: lab_setup.yml
+  when: execute == "create"
+
+- name: icmp check
+  import_playbook: 001_icmp_check.yml
+  when: execute == "test"
+
+- name: Lab destruction
+  import_playbook: lab_teardown.yml
+  when: execute == "delete"
+
+
+
+# steps in create:
+#  1. get latest rolling
+#  2. upload latest rolling
+#  3. create template with no hdd and iso as boot
+#  4. create project
+#  5. prepare ssh via terminal
+#  6. run config and test
+#  .
+#  .
+#  .
+#  .
+#  delete project
+#  delete template
+#  delete iso via ssh on gns3 (no API)

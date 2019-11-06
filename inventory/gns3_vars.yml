@@ -1,0 +1,44 @@
+# only when gater_facts: true
+#test: "{{ ansible_date_time.date }}"
+
+datetime: "{{ lookup('pipe','date +%Y%m%d-%H') }}"
+
+latest_rolling_url: "https://downloads.vyos.io/rolling/current/amd64/vyos-rolling-latest.iso"
+iso_filename: "vyos_{{ datetime }}.iso"
+iso_path: "images/{{ iso_filename }}"
+
+template_name: "vyos_{{ datetime }}"
+
+
+#### GNS3 Server settings
+gns3_url: "http://192.168.188.91"
+gns3_project_name: VyOS-Demo
+gns3_nodes_strategy: one_by_one
+
+### Nodes attributes and specifications
+gns3_nodes_spec:
+    - name: vyos-01
+      template: "{{ template_name }}"
+    - name: vyos-02
+      template: "{{ template_name }}"
+    - name: cloud-01
+      template: "Cloud"
+    - name: switch-01
+      template: "Ethernet switch"
+
+### Links mapping
+gns3_links_spec:
+    - ['switch-01', 'Ethernet0', 'cloud-01', 'ens160']
+    - ['switch-01', 'Ethernet1', 'vyos-01', 'eth0']
+    - ['switch-01', 'Ethernet2', 'vyos-02', 'eth0']
+    - ['vyos-01', 'eth1', 'vyos-02', 'eth1']
+
+
+### Boilerplate configuration settings
+boilerplate:
+    # `generate` or `deploy` the configuration
+    config: "deploy"
+    # Flag used when config is set to `deploy`. When `no` it will prompt the user for
+    # confirmation, when set to `yes` it will wait the minuites set in `automated_push_delay`
+    automated_push: "yes"
+    automated_push_delay: 3

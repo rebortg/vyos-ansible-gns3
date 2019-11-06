@@ -1,0 +1,119 @@
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - inventory/gns3_vars.yml
+  collections:
+    - davidban77.gns3
+
+  tasks:
+    #- name: get latest rolling
+    #  uri:
+    #    url: "{{ latest_rolling_url }}"
+    #    method: GET
+    #    dest: "{{ iso_path }}"
+
+    - name: POST from contents of local file
+      uri:
+        url: "{{ gns3_url }}:3080/v2/compute/qemu/images/{{ iso_filename }}"
+        method: POST
+        src: "{{ iso_path }}"
+        status_code: 204
+
+    - name: create Template
+      uri:
+        url: "{{ gns3_url }}:3080/v2/templates"
+        method: POST
+        body_format: json
+        body: {
+            "compute_id": "local",
+            "name": "{{ template_name }}",
+            "template_type": "qemu",
+            "ram": 512,
+            "adapters": 4,
+            "port_name_format": "eth{0}",
+            "cdrom_image": "{{ iso_filename }}",
+            "boot_priority": "d",
+            "qemu_path": "/usr/bin/qemu-system-x86_64",
+          }
+        status_code: 201
+
+    - name: Lab creation and setup
+      block:
+        - name: Create Project
+          gns3_project:
+            url: "{{ gns3_url }}"
+            project_name: "{{ gns3_project_name }}"
+            state: present
+            nodes_spec: "{{ gns3_nodes_spec }}"
+            links_spec: "{{ gns3_links_spec | default(omit) }}"
+
+        - name: Pause section
+        # sometimes nodes only boot after a little break between create and boot
+          pause:
+            seconds: "30"
+
+        - name: Start nodes one by one
+          when: gns3_nodes_strategy == "one_by_one"
+          gns3_project:
+            url: "{{ gns3_url }}"
+            project_name: "{{ gns3_project_name }}"
+            state: opened
+            nodes_state: started
+            nodes_strategy: one_by_one
+            nodes_delay: "{{ gns3_nodes_delay | default(omit) }}"
+
+        - name: Collect the nodes inventory
+          gns3_nodes_inventory:
+            url: "{{ gns3_url }}"
+            project_name: "{{ gns3_project_name }}"
+          register: nodes_inventory
+
+        #- debug: var=nodes_inventory
+
+
+    - name: Pause section to wait boot
+      pause:
+        minutes: "{{ boilerplate.automated_push_delay | default(3) }}"
+
+
+# Play that goes through the inventory devices to generate/push boiler plate config
+- hosts: all
+  gather_facts: no
+  vars:
+     ansible_connection: local
+     ansible_python_interpreter: "{{ansible_playbook_python}}"
+  vars_files:
+    - inventory/gns3_vars.yml
+  collections:
+    - davidban77.gns3
+
+  tasks:
+    - name: Retrieving nodes inventory information
+      set_fact:
+        nodes_inventory: "{{ hostvars['localhost']['nodes_inventory']['nodes_inventory'] }}"
+
+    - name: "Push init config"
+      when: ansible_network_os == "vyos"
+      gns3_telnet_console:
+        remote_addr: "{{ nodes_inventory[inventory_hostname]['server'] }}"
+        port: "{{ nodes_inventory[inventory_hostname]['console_port'] }}"
+        send_newline: yes
+        login_prompt:
+          - "login: "
+        user: "vyos"
+        password: "vyos"
+        prompts:
+          - "vyos@"
+        command: "{{ lookup('template', 'templates/001_init.j2').splitlines() }}"
+        pause: 1
+        timeout:
+          general: 180
+          pre_login: 60
+          post_login: 60
+          login_prompt: 30
+          config_dialog: 30
+
+    - name: Pause after init config
+      pause:
+        minutes: "1"
+

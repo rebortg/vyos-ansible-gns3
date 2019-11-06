@@ -1,0 +1,26 @@
+- hosts: all
+  gather_facts: no
+  vars:
+     ansible_connection: network_cli
+     ansible_python_interpreter: "{{ansible_playbook_python}}"
+  vars_files:
+    - inventory/gns3_vars.yml
+
+  tasks:
+    - name: icmp extern
+      vyos_ping:
+        dest: 192.168.188.1
+        source: eth0
+
+    - name: set eth1
+      vyos_l3_interfaces:
+        config:
+          - name: eth1
+            ipv4:
+              - address: "{{ eth1 }}"
+
+    - name: icmp intern
+      vyos_ping:
+        dest: "{{ icmp }}"
+        source: eth1
+

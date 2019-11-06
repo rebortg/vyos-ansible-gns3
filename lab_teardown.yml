@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - inventory/gns3_vars.yml
+  collections:
+    - davidban77.gns3
+
+  tasks:
+    - name: Stop lab and deletion
+      block:
+        - import_role:
+            name: delete_lab
+
+    # TODO: cleanup the images on gns3 server

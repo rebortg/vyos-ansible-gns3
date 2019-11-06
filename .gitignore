@@ -1,0 +1,10 @@
+venv
+*.pyc
+.idea
+/*.sh
+*.swp
+.DS_Store
+.vscode
+__pycache__
+
+*.iso
